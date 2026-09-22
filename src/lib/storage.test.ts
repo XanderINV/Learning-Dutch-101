@@ -27,6 +27,20 @@ describe('storage profiles', () => {
     expect(reset.profiles[1]!.progress.vocabularyLearned).toEqual(['b']);
   });
 
+  it('defaults to Ella and Jen profiles', () => {
+    const state = createDefaultState();
+    expect(state.profiles.map((p) => p.name)).toEqual(['Ella', 'Jen']);
+  });
+
+  it('renames legacy Learner labels on load', () => {
+    const state = createDefaultState();
+    state.profiles[0]!.name = 'Learner 1';
+    state.profiles[1]!.name = 'Learner 2';
+    saveState(state);
+    const loaded = loadState();
+    expect(loaded.profiles.map((p) => p.name)).toEqual(['Ella', 'Jen']);
+  });
+
   it('imports json with migration', () => {
     const state = createDefaultState();
     importJson(JSON.stringify(state));

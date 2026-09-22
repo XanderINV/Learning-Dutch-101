@@ -65,7 +65,8 @@ export interface AppStorageState {
   profiles: Profile[];
 }
 
-const DEFAULT_COLORS = ['#E87722', '#1B4F72', '#2E86AB', '#F4A261'];
+const DEFAULT_COLORS = ['#0f6e73', '#c2410c', '#0369a1', '#b45309'];
+const DEFAULT_NAMES = ['Ella', 'Jen'] as const;
 
 function newProfileId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -80,7 +81,7 @@ export function createDefaultProfile(name: string, index = 0): Profile {
     id,
     name,
     avatarColor: DEFAULT_COLORS[index % DEFAULT_COLORS.length]!,
-    icon: (['leaf', 'bike'] as ProfileIcon[])[index] ?? 'book',
+    icon: (['tulip', 'bike'] as ProfileIcon[])[index] ?? 'book',
     progress: {
       modules: [],
       lessons: [],
@@ -100,13 +101,29 @@ export function createDefaultProfile(name: string, index = 0): Profile {
 }
 
 export function createDefaultState(): AppStorageState {
-  const p1 = createDefaultProfile('Learner 1', 0);
-  const p2 = createDefaultProfile('Learner 2', 1);
+  const p1 = createDefaultProfile(DEFAULT_NAMES[0], 0);
+  const p2 = createDefaultProfile(DEFAULT_NAMES[1], 1);
   return {
     version: STORAGE_VERSION,
     activeProfileId: p1.id,
     profiles: [p1, p2],
   };
+}
+
+/** Rename leftover default labels without touching custom names. */
+export function applyDefaultProfileNames(state: AppStorageState): AppStorageState {
+  const renames: Record<string, string> = {
+    'Learner 1': 'Ella',
+    'Learner 2': 'Jen',
+  };
+  let changed = false;
+  const profiles = state.profiles.map((profile) => {
+    const mapped = renames[profile.name];
+    if (!mapped) return profile;
+    changed = true;
+    return { ...profile, name: mapped };
+  });
+  return changed ? { ...state, profiles } : state;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -149,10 +166,14 @@ export function loadState(): AppStorageState {
     }
     const parsed: unknown = JSON.parse(raw);
     const migrated = migrate(parsed);
-    if (migrated.version !== (isRecord(parsed) ? parsed.version : undefined)) {
-      saveState(migrated);
+    const next = applyDefaultProfileNames(migrated);
+    const versionChanged =
+      migrated.version !== (isRecord(parsed) ? parsed.version : undefined);
+    const namesChanged = next !== migrated;
+    if (versionChanged || namesChanged) {
+      saveState(next);
     }
-    return migrated;
+    return next;
   } catch {
     const fresh = createDefaultState();
     saveState(fresh);

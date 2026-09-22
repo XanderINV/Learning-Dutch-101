@@ -3,30 +3,30 @@
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
 
-  /* Canal-morning palette — cool mist + teal, warm amber for CTAs only */
-  --color-bg-top: #e7f0f4;
-  --color-bg-mid: #f3f7f9;
-  --color-bg-bottom: #fafcfd;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f0f6f8;
-  --color-surface-elevated: #ffffff;
+  /* Soft learning studio — mist teal + dune wash (not flat white) */
+  --color-bg-top: #dcecf1;
+  --color-bg-mid: #e8f2f0;
+  --color-bg-bottom: #f3efe6;
+  --color-surface: #f7fbfb;
+  --color-surface-muted: #e3f0f1;
+  --color-surface-elevated: #f9fcfc;
   --color-ink: #0f1c2e;
-  --color-ink-muted: #5a6b7d;
-  --color-ink-faint: #8a9aab;
+  --color-ink-muted: #4f6274;
+  --color-ink-faint: #7d8fa0;
   --color-primary: #0f6e73;
   --color-primary-hover: #0b585c;
-  --color-primary-soft: #d5eef0;
-  --color-accent: #d97706;
-  --color-accent-hover: #b45309;
-  --color-accent-soft: #fef3c7;
+  --color-primary-soft: #c8e8ea;
+  --color-accent: #c2410c;
+  --color-accent-hover: #9a3412;
+  --color-accent-soft: #ffedd5;
   --color-success: #047857;
   --color-success-bg: #d1fae5;
   --color-error: #b91c1c;
   --color-error-bg: #fee2e2;
-  --color-border: #d4e0e6;
-  --color-border-strong: #b8c9d2;
+  --color-border: #c5d8dc;
+  --color-border-strong: #a8c0c6;
   --color-focus: #0f6e73;
-  --color-nav: rgb(255 255 255 / 82%);
+  --color-nav: rgb(247 251 251 / 88%);
 
   /* Legacy aliases used in older components */
   --color-cream: var(--color-bg-mid);
