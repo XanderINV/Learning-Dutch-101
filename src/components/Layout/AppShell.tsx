@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { BRAND } from '@/brand';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
 import { AnimatedOutlet } from '@/components/Layout/AnimatedOutlet';
+import { LearningBuddy } from '@/components/Mascot/LearningBuddy';
 
 const links = [
   { to: '/home', label: 'Home' },
@@ -102,6 +103,7 @@ export function AppShell() {
         <AnimatedOutlet />
       </main>
       <footer className="app-footer">{BRAND.tagline}</footer>
+      <LearningBuddy />
     </div>
   );
 }

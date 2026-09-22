@@ -950,3 +950,199 @@ fieldset label {
 fieldset label:hover {
   background: var(--color-surface-muted);
 }
+
+/* ——— Learning buddy (Pip) ——— */
+
+.mascot {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 0.55rem;
+  max-width: min(18rem, calc(100vw - 1.5rem));
+  pointer-events: none;
+}
+
+.mascot > * {
+  pointer-events: auto;
+}
+
+.mascot__hit {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  width: 7.25rem;
+  height: 7.25rem;
+  border-radius: 50%;
+}
+
+.mascot__pulse {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(47 158 148 / 35%) 0%, transparent 70%);
+  animation: mascot-breathe 2.8s var(--ease-soft) infinite;
+}
+
+.mascot__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: mascot-bob 3.4s var(--ease-soft) infinite;
+  filter: drop-shadow(0 10px 18px rgb(15 28 46 / 16%));
+}
+
+.mascot__badge {
+  position: absolute;
+  left: 50%;
+  bottom: -0.1rem;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-soft);
+}
+
+.mascot__card {
+  width: min(17rem, calc(100vw - 1.5rem));
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(165deg, rgb(255 255 255 / 90%) 0%, rgb(200 232 234 / 78%) 100%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lift);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: dialog-pop var(--duration) var(--ease-out);
+}
+
+.mascot__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.mascot__card-top strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.mascot__tip {
+  margin: 0 0 0.75rem;
+  color: var(--color-ink-muted);
+  font-size: 0.92rem;
+}
+
+.mascot__stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.mascot__stats li {
+  text-align: center;
+  background: rgb(255 255 255 / 55%);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.2rem;
+}
+
+.mascot__stats span {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+}
+
+.mascot__stats strong {
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+.mascot__icon-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-ink-muted);
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius-sm);
+}
+
+.mascot__icon-btn:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-ink);
+}
+
+.mascot__fab {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-strong);
+  background: linear-gradient(160deg, #fff, var(--color-primary-soft));
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+
+.mascot--mood-lonely .mascot__svg {
+  filter: drop-shadow(0 10px 18px rgb(15 28 46 / 16%)) saturate(0.75);
+}
+
+.mascot--champion .mascot__badge {
+  background: linear-gradient(90deg, var(--color-accent), #ea580c);
+}
+
+@keyframes mascot-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes mascot-breathe {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.95;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot__svg,
+  .mascot__pulse {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .mascot__hit {
+    width: 6rem;
+    height: 6rem;
+  }
+
+  .app-main {
+    padding-bottom: 6.5rem;
+  }
+}

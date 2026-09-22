@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { BRAND } from '@/brand';
 import { useAppState } from '@/state/AppState';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
+import { LearningBuddy } from '@/components/Mascot/LearningBuddy';
 
 const CEFR_PLAIN: Record<string, string> = {
   'pre-a1': 'Pre-beginner — first words and sounds',
@@ -81,6 +82,7 @@ export function WelcomePage() {
           </ul>
         </section>
       </main>
+      <LearningBuddy />
     </div>
   );
 }
