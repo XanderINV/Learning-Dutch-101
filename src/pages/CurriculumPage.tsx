@@ -17,8 +17,8 @@ export function CurriculumPage() {
       <header className="page-header">
         <h1>Curriculum map</h1>
         <p>
-          Your current focus level is <strong>{level.toUpperCase()}</strong>.
-          Modules unlock in order within each level.
+          Your current focus is <strong>{level.toUpperCase()}</strong>. Modules
+          unlock in order — revisit anything you have already finished.
         </p>
       </header>
       {levelModules.length === 0 ? (

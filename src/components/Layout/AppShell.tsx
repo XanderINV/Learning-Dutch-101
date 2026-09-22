@@ -1,6 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { BRAND } from '@/brand';
 import { ProfileSwitcher } from '@/components/ProfileSwitcher';
+import { AnimatedOutlet } from '@/components/Layout/AnimatedOutlet';
 
 const links = [
   { to: '/home', label: 'Home' },
@@ -39,18 +40,9 @@ export function AppShell() {
         </div>
       </header>
       <main className="app-main">
-        <Outlet />
+        <AnimatedOutlet />
       </main>
-      <footer
-        style={{
-          textAlign: 'center',
-          padding: '1.5rem',
-          fontSize: '0.85rem',
-          color: 'var(--color-ink-muted)',
-        }}
-      >
-        {BRAND.tagline}
-      </footer>
+      <footer className="app-footer">{BRAND.tagline}</footer>
     </div>
   );
 }

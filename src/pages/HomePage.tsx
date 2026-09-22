@@ -12,64 +12,57 @@ export function HomePage() {
   const vocabCount = countVocabularyLearned(activeProfile);
   const completedLessons = activeProfile.progress.lessons.length;
   const totalLessons = modules.reduce((n, m) => n + m.lessons.length, 0);
+  const levelLabel = activeProfile.progress.currentLevel.toUpperCase();
 
   return (
     <>
       <header className="page-header">
         <h1>Welcome back, {activeProfile.name}</h1>
         <p>
-          {BRAND.name} is ready when you are — a calm space to build Dutch step
-          by step.
+          You are working at <strong>{levelLabel}</strong>. {BRAND.name} keeps
+          each session short — continue a lesson, clear reviews, or explore the
+          map.
         </p>
       </header>
-      <div
-        className="card"
-        style={{
-          display: 'grid',
-          gap: '1.5rem',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
-          marginBottom: '2rem',
-        }}
-      >
-        <div>
-          <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>Streak</p>
-          <p style={{ fontSize: '2rem', margin: 0, fontFamily: 'var(--font-display)' }}>
-            {activeProfile.streak.current} days
-          </p>
+
+      <div className="stat-strip" role="group" aria-label="Learning snapshot">
+        <div className="stat-tile">
+          <p className="stat-tile__label">Streak</p>
+          <p className="stat-tile__value">{activeProfile.streak.current}</p>
         </div>
-        <div>
-          <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>Due reviews</p>
-          <p style={{ fontSize: '2rem', margin: 0, fontFamily: 'var(--font-display)' }}>
-            {due}
-          </p>
+        <div className="stat-tile">
+          <p className="stat-tile__label">Reviews due</p>
+          <p className="stat-tile__value">{due}</p>
         </div>
-        <div>
-          <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>Words saved</p>
-          <p style={{ fontSize: '2rem', margin: 0, fontFamily: 'var(--font-display)' }}>
-            {vocabCount}
-          </p>
+        <div className="stat-tile">
+          <p className="stat-tile__label">Words saved</p>
+          <p className="stat-tile__value">{vocabCount}</p>
         </div>
       </div>
-      <ProgressBar
-        label="Overall lessons"
-        value={completedLessons}
-        max={Math.max(totalLessons, 1)}
-      />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '2rem' }}>
-        <Link className="btn btn--primary" to="/curriculum">
-          Open curriculum map
-        </Link>
-        <Link className="btn btn--secondary" to="/review">
-          Review centre
-        </Link>
-        <Link
-          className="btn btn--ghost"
-          to="/"
-          onClick={() => updateSettings({ onboardingComplete: false })}
-        >
-          Replay onboarding
-        </Link>
-      </div>
+
+      <section className="card card--panel" aria-labelledby="continue-heading">
+        <h2 id="continue-heading">Continue learning</h2>
+        <ProgressBar
+          label="Overall lessons"
+          value={completedLessons}
+          max={Math.max(totalLessons, 1)}
+        />
+        <div className="btn-row">
+          <Link className="btn btn--primary" to="/curriculum">
+            Open curriculum map
+          </Link>
+          <Link className="btn btn--secondary" to="/review">
+            Review centre{due > 0 ? ` (${due})` : ''}
+          </Link>
+          <Link
+            className="btn btn--ghost"
+            to="/"
+            onClick={() => updateSettings({ onboardingComplete: false })}
+          >
+            Replay onboarding
+          </Link>
+        </div>
+      </section>
     </>
   );
 }

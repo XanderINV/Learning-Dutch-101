@@ -4,10 +4,7 @@ export function ProfileSwitcher() {
   const { state, activeProfile, switchProfile, updateProfileMeta } = useAppState();
 
   return (
-    <div
-      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}
-      aria-label="Learner profiles"
-    >
+    <div className="profile-switcher" aria-label="Learner profiles">
       {state.profiles.map((profile) => (
         <button
           key={profile.id}
@@ -21,19 +18,14 @@ export function ProfileSwitcher() {
           }}
         >
           <span
+            className="profile-switcher__dot"
             aria-hidden="true"
-            style={{
-              width: '1rem',
-              height: '1rem',
-              borderRadius: '50%',
-              background: profile.avatarColor,
-              display: 'inline-block',
-            }}
+            style={{ background: profile.avatarColor }}
           />
           {profile.name}
         </button>
       ))}
-      <label style={{ fontSize: '0.85rem' }}>
+      <label className="profile-switcher__label">
         Icon
         <select
           value={activeProfile.icon}
@@ -42,7 +34,6 @@ export function ProfileSwitcher() {
               icon: e.target.value as (typeof PROFILE_ICONS)[number],
             })
           }
-          style={{ marginLeft: '0.35rem' }}
         >
           {PROFILE_ICONS.map((icon) => (
             <option key={icon} value={icon}>
