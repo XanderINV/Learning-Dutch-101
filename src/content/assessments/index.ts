@@ -6,7 +6,7 @@ export const assessments: Assessment[] = [
     title: 'Placement check',
     titleNl: 'Niveautest (kort)',
     description:
-      'Short multi-skill check to suggest a starting level (Pre-A1 through B1). Not an official exam.',
+      'Short multi-skill check to suggest a starting level (Pre-A1 through B2). Not an official exam.',
     kind: 'placement',
     questions: [
       {
@@ -346,6 +346,93 @@ export const assessments: Assessment[] = [
         skill: 'listening',
         level: 'b1',
         difficulty: 2,
+      },
+    ],
+  },
+  {
+    id: 'assessment-b2-end',
+    title: 'B2 review',
+    titleNl: 'B2-eindcheck',
+    description:
+      'Upper-intermediate check: nuanced argument, connectors, media literacy, and workplace language. Not an official CEFR exam.',
+    kind: 'level-end',
+    targetLevel: 'b2',
+    questions: [
+      {
+        id: 'b2-end-q01',
+        type: 'multiple-choice',
+        prompt: 'Hoewel het duur is, koop ik het. “Hoewel” introduceert…',
+        options: [
+          'een toegevende bijzin',
+          'alleen een vraag',
+          'een gebiedende wijs',
+          'een lidwoord',
+        ],
+        acceptedAnswers: ['een toegevende bijzin'],
+        explanation: 'Hoewel = although (concessive clause).',
+        skill: 'grammar',
+        level: 'b2',
+        difficulty: 3,
+      },
+      {
+        id: 'b2-end-q02',
+        type: 'fill-blank',
+        prompt: 'We gaan akkoord, _____ de voorwaarden duidelijk zijn.',
+        acceptedAnswers: ['mits'],
+        explanation: 'Mits = provided that.',
+        skill: 'grammar',
+        level: 'b2',
+        difficulty: 3,
+      },
+      {
+        id: 'b2-end-q03',
+        type: 'reading-comp',
+        prompt: 'Wat doet de schrijver?',
+        passage:
+          'Enerzijds is digitaal werken flexibel. Anderzijds vraagt het discipline. Uiteindelijk hangt succes af van duidelijke afspraken.',
+        options: [
+          'Weegt twee kanten af en trekt een conclusie',
+          'Vertelt alleen een grap',
+          'Geeft een recept',
+          'Vraagt om een hotel',
+        ],
+        acceptedAnswers: ['Weegt twee kanten af en trekt een conclusie'],
+        explanation: 'Enerzijds/anderzijds + uiteindelijk = balanced argument.',
+        skill: 'reading',
+        level: 'b2',
+        difficulty: 3,
+      },
+      {
+        id: 'b2-end-q04',
+        type: 'translation-en-nl',
+        prompt: 'Translate: Check your sources.',
+        acceptedAnswers: [
+          'Controleer je bronnen.',
+          'Controleer jouw bronnen.',
+          'Controleer uw bronnen.',
+        ],
+        explanation: 'Bronnen controleren is kern van medialwijsheid.',
+        skill: 'writing',
+        level: 'b2',
+        difficulty: 2,
+      },
+      {
+        id: 'b2-end-q05',
+        type: 'guided-writing',
+        prompt:
+          'Schrijf 4–5 zinnen: jouw standpunt over thuiswerken, één tegenargument, en een conclusie met een B2-connector.',
+        modelAnswer:
+          'Mijn standpunt is dat hybride werken goed kan werken. Een tegenargument is minder informeel contact. Desalniettemin helpen vaste overlegmomenten. Daarom steun ik een duidelijke hybride regeling.',
+        checklist: [
+          'Standpunt',
+          'Tegenargument',
+          'B2-connector (bijv. desalniettemin/enerzijds)',
+          'Conclusie',
+        ],
+        explanation: 'Self-assess against the checklist — not auto-scored for style.',
+        skill: 'writing',
+        level: 'b2',
+        difficulty: 3,
       },
     ],
   },

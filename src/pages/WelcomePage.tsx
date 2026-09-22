@@ -9,6 +9,7 @@ const CEFR_PLAIN: Record<string, string> = {
   a1: 'Beginner — simple everyday Dutch',
   a2: 'Elementary — longer conversations',
   b1: 'Intermediate — opinions and longer texts',
+  b2: 'Upper-intermediate — nuanced debate and complex texts',
 };
 
 export function WelcomePage() {

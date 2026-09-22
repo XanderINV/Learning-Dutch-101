@@ -6,7 +6,13 @@ import type {
   ProfileProgress,
 } from '@/lib/storage';
 
-const LEVEL_ORDER: CefrLevel[] = ['pre-a1', 'a1', 'a2', 'b1'];
+export const LEVEL_ORDER: CefrLevel[] = [
+  'pre-a1',
+  'a1',
+  'a2',
+  'b1',
+  'b2',
+];
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -51,49 +57,34 @@ export function getModulesForLevel(modules: Module[], level: CefrLevel): Module[
   return modules.filter((m) => m.level === level).sort((a, b) => a.order - b.order);
 }
 
+/** Open access: every module is available; completion is tracked but not gated. */
 export function unlockModulesForLevel(
   progress: ProfileProgress,
   modules: Module[],
-  level: CefrLevel,
+  level?: CefrLevel,
 ): ProfileProgress {
-  const levelModules = getModulesForLevel(modules, level);
+  const scoped = level ? getModulesForLevel(modules, level) : [...modules];
   const moduleMap = new Map(progress.modules.map((m) => [m.moduleId, m]));
 
-  levelModules.forEach((mod, index) => {
+  for (const mod of scoped) {
     const existing = moduleMap.get(mod.id);
-    const prevComplete =
-      index === 0 ||
-      (() => {
-        const prev = levelModules[index - 1]!;
-        const prevEntry = moduleMap.get(prev.id);
-        return (
-          prevEntry != null &&
-          prev.lessons.every((l) => prevEntry.lessonsCompleted.includes(l.id))
-        );
-      })();
-
-    const unlocked = index === 0 ? true : prevComplete;
     moduleMap.set(mod.id, {
       moduleId: mod.id,
-      unlocked: existing?.unlocked ?? unlocked,
+      unlocked: true,
       lessonsCompleted: existing?.lessonsCompleted ?? [],
     });
-  });
+  }
 
   return { ...progress, modules: [...moduleMap.values()] };
 }
 
+/** Lessons are freely accessible; order is suggested, not required. */
 export function isLessonUnlocked(
-  progress: ProfileProgress,
-  module: Module,
-  lessonIndex: number,
+  _progress: ProfileProgress,
+  _module: Module,
+  _lessonIndex: number,
 ): boolean {
-  const modProgress = progress.modules.find((m) => m.moduleId === module.id);
-  if (!modProgress?.unlocked) return false;
-  if (lessonIndex === 0) return true;
-  const prevLesson = module.lessons[lessonIndex - 1];
-  if (!prevLesson) return false;
-  return modProgress.lessonsCompleted.includes(prevLesson.id);
+  return true;
 }
 
 export type LessonCompleteInput = {

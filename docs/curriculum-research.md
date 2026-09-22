@@ -32,14 +32,20 @@
 - Deal with most travel situations; produce simple connected text on familiar topics.
 - Describe experiences, events, dreams, hopes; briefly give reasons and opinions.
 
+### B2
+- Understand complex texts on concrete and abstract topics, including technical discussion in your field.
+- Interact with fluency and spontaneity that makes regular interaction with native speakers possible.
+- Produce clear, detailed text; explain viewpoints on topical issues giving advantages and disadvantages.
+
 ## Learning progression on this site
 
 1. **Pre-A1 (modules 1–4):** alphabet, pronunciation, survival greetings, numbers/time/classroom language.
 2. **A1 (modules 5–12):** personal world — home, food, shopping, town, work/hobbies/weather/health — with present tense and de/het.
 3. **A2 (modules 13–18):** plans, travel, perfect tense, housing/health, social/work/restaurant, feelings and messages.
 4. **B1 (modules 19–24):** narrative and opinion, workplace and media texts, formal admin, society and goals.
+5. **B2 (modules 25–30):** nuanced argument, media literacy, workplace diplomacy, abstract themes, and exam-style synthesis.
 
-Each module: 3 short lessons + checkpoint; minimum 15 exercises including varied skills.
+Each module: 3 short lessons + checkpoint; minimum 15 exercises including varied skills. Modules may be started in any order.
 
 ## Module–CEFR skill mapping (overview)
 
@@ -49,6 +55,7 @@ Each module: 3 short lessons + checkpoint; minimum 15 exercises including varied
 | A1 | vocabulary, speaking, reading | present tense, niet/geen, questions, de/het |
 | A2 | grammar, writing, listening | perfectum, separable verbs, future with *gaan* |
 | B1 | reading, writing, speaking | subordinate clauses, *zou*, formal register |
+| B2 | reading, writing, speaking | concessive clauses, passives, register shifts |
 
 ## Teaching assumptions
 

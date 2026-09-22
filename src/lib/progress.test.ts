@@ -20,14 +20,28 @@ const sampleModule: Module = {
   checkpoint: [],
 };
 
+const laterModule: Module = {
+  ...sampleModule,
+  id: 'm2',
+  order: 2,
+  lessons: [{ id: 'l1', title: 'L1', objective: 'o', steps: [] }],
+  checkpoint: [],
+};
+
 describe('progress', () => {
-  it('unlocks lessons sequentially', () => {
+  it('keeps all modules unlocked without prior completion', () => {
+    const profile = createDefaultProfile('Test');
+    const progress = unlockModulesForLevel(profile.progress, [sampleModule, laterModule]);
+    expect(progress.modules.every((m) => m.unlocked)).toBe(true);
+    expect(isLessonUnlocked(progress, laterModule, 0)).toBe(true);
+  });
+
+  it('still records lesson completion', () => {
     let profile = createDefaultProfile('Test');
     profile = updateLessonProgress(profile, [sampleModule], {
       moduleId: 'm1',
-      lessonId: 'l1',
+      lessonId: 'l2',
     });
-    const progress = unlockModulesForLevel(profile.progress, [sampleModule], 'pre-a1');
-    expect(isLessonUnlocked(progress, sampleModule, 1)).toBe(true);
+    expect(profile.progress.lessons.some((l) => l.lessonId === 'l2')).toBe(true);
   });
 });

@@ -6,7 +6,7 @@ import type {
   VocabularyItem,
 } from '@/content/types';
 
-const CEFR_LEVELS: CefrLevel[] = ['pre-a1', 'a1', 'a2', 'b1'];
+const CEFR_LEVELS: CefrLevel[] = ['pre-a1', 'a1', 'a2', 'b1', 'b2'];
 
 const NEEDS_ANSWERS: Set<Exercise['type']> = new Set([
   'multiple-choice',

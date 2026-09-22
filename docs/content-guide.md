@@ -37,9 +37,9 @@ Vocabulary steps list `vocabularyIds` that must exist in `vocabulary`.
 
 ## CEFR levels
 
-Use: `pre-a1`, `a1`, `a2`, `b1`.
+Use: `pre-a1`, `a1`, `a2`, `b1`, `b2`.
 
-Modules unlock sequentially within a level when the previous module’s lessons are complete.
+All modules and lessons are available without completing earlier ones. Progress is still tracked for streaks and “continue” links.
 
 ## Assessments
 

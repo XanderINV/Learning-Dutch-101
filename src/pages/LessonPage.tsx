@@ -6,7 +6,6 @@ import {
   getModuleById,
   getVocabularyById,
 } from '@/content/curriculum';
-import { isLessonUnlocked, unlockModulesForLevel } from '@/lib/progress';
 import { useAppState } from '@/state/AppState';
 import { ExplanationCard } from '@/components/ExplanationCard';
 import { ExamplePair } from '@/components/ExamplePair';
@@ -16,23 +15,13 @@ import { EmptyState } from '@/components/EmptyState';
 
 export function LessonPage() {
   const { moduleId = '', lessonId = '' } = useParams();
-  const { activeProfile, completeLesson } = useAppState();
+  const { completeLesson } = useAppState();
   const [stepIndex, setStepIndex] = useState(0);
   const [exerciseScore, setExerciseScore] = useState({ done: 0, correct: 0 });
 
   const module = getModuleById(moduleId);
   const lesson = getLesson(moduleId, lessonId);
-
   const lessonIndex = module?.lessons.findIndex((l) => l.id === lessonId) ?? -1;
-  const progress = unlockModulesForLevel(
-    activeProfile.progress,
-    module ? [module] : [],
-    module?.level ?? 'pre-a1',
-  );
-  const unlocked =
-    module && lessonIndex >= 0
-      ? isLessonUnlocked(progress, module, lessonIndex)
-      : false;
 
   const vocabIds = useMemo(() => {
     if (!lesson) return [];
@@ -49,20 +38,6 @@ export function LessonPage() {
         action={
           <Link className="btn btn--primary" to="/curriculum">
             Back to map
-          </Link>
-        }
-      />
-    );
-  }
-
-  if (!unlocked) {
-    return (
-      <EmptyState
-        title="Lesson locked"
-        description="Finish the previous lesson in this module first."
-        action={
-          <Link className="btn btn--primary" to="/curriculum">
-            Curriculum map
           </Link>
         }
       />
@@ -86,21 +61,21 @@ export function LessonPage() {
   }
 
   return (
-    <>
+    <article>
       <header className="page-header">
-        <p style={{ margin: 0, color: 'var(--color-ink-muted)' }}>{module.title}</p>
+        <p className="module-card__eyebrow">
+          {module.level.toUpperCase()} · Lesson {lessonIndex + 1} of{' '}
+          {module.lessons.length}
+        </p>
         <h1>{lesson.title}</h1>
         <p>{lesson.objective}</p>
-        <p>
-          Step {stepIndex + 1} of {lesson.steps.length}
-        </p>
       </header>
 
       {step?.type === 'explanation' ? (
         <ExplanationCard title={step.title} body={step.body} />
       ) : null}
       {step?.type === 'examples' ? (
-        <section>
+        <section className="card">
           <h2>{step.title}</h2>
           {step.items.map((item) => (
             <ExamplePair key={item.nl} nl={item.nl} en={item.en} />
@@ -108,27 +83,21 @@ export function LessonPage() {
         </section>
       ) : null}
       {step?.type === 'vocabulary' ? (
-        <section>
+        <section className="card">
           <h2>{step.title}</h2>
           <div className="grid-cards">
             {step.vocabularyIds.map((id) => {
-              const v = getVocabularyById(id);
-              return v ? <VocabCard key={id} item={v} /> : null;
+              const item = getVocabularyById(id);
+              return item ? <VocabCard key={id} item={item} /> : null;
             })}
           </div>
         </section>
       ) : null}
       {step?.type === 'exercise' ? (
-        <section>
+        <div>
           {step.exerciseIds.map((id) => {
             const ex = getExerciseById(id);
-            if (!ex) {
-              return (
-                <p key={id} role="status">
-                  Exercise {id} is not registered in curriculum yet.
-                </p>
-              );
-            }
+            if (!ex) return null;
             return (
               <ExercisePlayer
                 key={id}
@@ -142,7 +111,7 @@ export function LessonPage() {
               />
             );
           })}
-        </section>
+        </div>
       ) : null}
       {step?.type === 'summary' ? (
         <section className="card">
@@ -155,14 +124,14 @@ export function LessonPage() {
         </section>
       ) : null}
 
-      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+      <div className="btn-row">
         <button
           type="button"
           className="btn btn--ghost"
           disabled={stepIndex === 0}
-          onClick={() => setStepIndex((i) => i - 1)}
+          onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
         >
-          Previous
+          Back
         </button>
         {!isLast ? (
           <button
@@ -170,14 +139,18 @@ export function LessonPage() {
             className="btn btn--primary"
             onClick={() => setStepIndex((i) => i + 1)}
           >
-            Next step
+            Continue
           </button>
         ) : (
-          <button type="button" className="btn btn--primary" onClick={finishLesson}>
+          <Link
+            className="btn btn--primary"
+            to="/curriculum"
+            onClick={finishLesson}
+          >
             Complete lesson
-          </button>
+          </Link>
         )}
       </div>
-    </>
+    </article>
   );
 }

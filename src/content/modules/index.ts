@@ -23,6 +23,12 @@ import { moduleB103, moduleB103Exercises } from './b1-03';
 import { moduleB104, moduleB104Exercises } from './b1-04';
 import { moduleB105, moduleB105Exercises } from './b1-05';
 import { moduleB106, moduleB106Exercises } from './b1-06';
+import { moduleB201, moduleB201Exercises } from './b2-01';
+import { moduleB202, moduleB202Exercises } from './b2-02';
+import { moduleB203, moduleB203Exercises } from './b2-03';
+import { moduleB204, moduleB204Exercises } from './b2-04';
+import { moduleB205, moduleB205Exercises } from './b2-05';
+import { moduleB206, moduleB206Exercises } from './b2-06';
 
 export const modules: Module[] = [
   modulePreA101,
@@ -49,6 +55,12 @@ export const modules: Module[] = [
   moduleB104,
   moduleB105,
   moduleB106,
+  moduleB201,
+  moduleB202,
+  moduleB203,
+  moduleB204,
+  moduleB205,
+  moduleB206,
 ].sort((a, b) => a.order - b.order);
 
 export const allLessonExercises = [
@@ -76,4 +88,10 @@ export const allLessonExercises = [
   ...moduleB104Exercises,
   ...moduleB105Exercises,
   ...moduleB106Exercises,
+  ...moduleB201Exercises,
+  ...moduleB202Exercises,
+  ...moduleB203Exercises,
+  ...moduleB204Exercises,
+  ...moduleB205Exercises,
+  ...moduleB206Exercises,
 ];

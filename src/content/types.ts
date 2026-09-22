@@ -1,4 +1,4 @@
-export type CefrLevel = 'pre-a1' | 'a1' | 'a2' | 'b1';
+export type CefrLevel = 'pre-a1' | 'a1' | 'a2' | 'b1' | 'b2';
 
 export type SkillTag =
   | 'listening'

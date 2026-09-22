@@ -5,12 +5,14 @@ import { ProgressBar } from '@/components/ProgressBar';
 type Props = {
   module: Module;
   completedLessons: number;
-  unlocked: boolean;
+  unlocked?: boolean;
 };
 
-export function ModuleCard({ module, completedLessons, unlocked }: Props) {
+export function ModuleCard({ module, completedLessons, unlocked = true }: Props) {
   const total = module.lessons.length;
-  const firstLesson = module.lessons[0];
+  const targetLesson =
+    module.lessons[Math.min(completedLessons, Math.max(total - 1, 0))] ??
+    module.lessons[0];
 
   return (
     <article
@@ -27,16 +29,27 @@ export function ModuleCard({ module, completedLessons, unlocked }: Props) {
         value={completedLessons}
         max={Math.max(total, 1)}
       />
-      {unlocked && firstLesson ? (
-        <Link
-          className="btn btn--primary"
-          style={{ marginTop: '1rem' }}
-          to={`/lesson/${module.id}/${firstLesson.id}`}
-        >
-          {completedLessons > 0 ? 'Continue' : 'Start module'}
-        </Link>
+      {unlocked && targetLesson ? (
+        <>
+          <Link
+            className="btn btn--primary"
+            style={{ marginTop: '1rem' }}
+            to={`/lesson/${module.id}/${targetLesson.id}`}
+          >
+            {completedLessons > 0 ? 'Continue' : 'Start module'}
+          </Link>
+          <ul className="module-card__lessons">
+            {module.lessons.map((lesson, index) => (
+              <li key={lesson.id}>
+                <Link to={`/lesson/${module.id}/${lesson.id}`}>
+                  {index + 1}. {lesson.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : (
-        <p className="module-card__locked">Complete the previous module to unlock.</p>
+        <p className="module-card__locked">This module is unavailable.</p>
       )}
     </article>
   );
