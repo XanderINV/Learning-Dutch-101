@@ -15,6 +15,11 @@ import {
 } from '@/lib/progress';
 import { modules } from '@/content/curriculum';
 import {
+  equipCosmetic,
+  syncCosmeticUnlocks,
+  type CosmeticSlot,
+} from '@/lib/cosmetics';
+import {
   createDefaultState,
   exportJson,
   importJson,
@@ -45,10 +50,10 @@ type AppContextValue = {
   exportData: () => string;
   importData: (json: string) => void;
   resetActiveProfile: () => void;
-  updateSettings: (
-    patch: Partial<Profile['settings']>,
-  ) => void;
+  updateSettings: (patch: Partial<Profile['settings']>) => void;
   recordAssessment: (entry: Profile['assessmentHistory'][number]) => void;
+  syncCosmetics: () => void;
+  setEquippedCosmetic: (slot: CosmeticSlot, itemId: string | null) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -73,6 +78,11 @@ function setState(next: AppStorageState): void {
 
 function initFromStorage(): void {
   memoryState = loadState();
+  memoryState = {
+    ...memoryState,
+    profiles: memoryState.profiles.map(syncCosmeticUnlocks),
+  };
+  saveState(memoryState);
 }
 
 initFromStorage();
@@ -124,7 +134,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               reviewQueue: enqueueVocabularyReview(next, input.vocabularyIds),
             };
           }
-          return advanceLevelIfReady(next, modules);
+          next = advanceLevelIfReady(next, modules);
+          return syncCosmeticUnlocks(next);
         }),
       );
     },
@@ -134,12 +145,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const rateReviewCard = useCallback((cardId: string, rating: ReviewRating) => {
     const pid = memoryState.activeProfileId;
     setState(
-      patchProfileInState(memoryState, pid, (profile) => ({
-        ...profile,
-        reviewQueue: profile.reviewQueue.map((item) =>
-          item.cardId === cardId ? rateCard(item, rating) : item,
-        ),
-      })),
+      patchProfileInState(memoryState, pid, (profile) =>
+        syncCosmeticUnlocks({
+          ...profile,
+          reviewQueue: profile.reviewQueue.map((item) =>
+            item.cardId === cardId ? rateCard(item, rating) : item,
+          ),
+        }),
+      ),
     );
   }, []);
 
@@ -167,10 +180,35 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     (entry: Profile['assessmentHistory'][number]) => {
       const pid = memoryState.activeProfileId;
       setState(
-        patchProfileInState(memoryState, pid, (profile) => ({
-          ...profile,
-          assessmentHistory: [...profile.assessmentHistory, entry],
-        })),
+        patchProfileInState(memoryState, pid, (profile) =>
+          syncCosmeticUnlocks({
+            ...profile,
+            assessmentHistory: [...profile.assessmentHistory, entry],
+          }),
+        ),
+      );
+    },
+    [],
+  );
+
+  const syncCosmetics = useCallback(() => {
+    setState({
+      ...memoryState,
+      profiles: memoryState.profiles.map(syncCosmeticUnlocks),
+    });
+  }, []);
+
+  const setEquippedCosmetic = useCallback(
+    (slot: CosmeticSlot, itemId: string | null) => {
+      const pid = memoryState.activeProfileId;
+      setState(
+        patchProfileInState(memoryState, pid, (profile) => {
+          const synced = syncCosmeticUnlocks(profile);
+          return {
+            ...synced,
+            cosmetics: equipCosmetic(synced.cosmetics, itemId, slot),
+          };
+        }),
       );
     },
     [],
@@ -188,6 +226,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     resetActiveProfile,
     updateSettings,
     recordAssessment,
+    syncCosmetics,
+    setEquippedCosmetic,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

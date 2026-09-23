@@ -64,6 +64,10 @@ Repository settings: **Settings → Pages → Build and deployment → GitHub Ac
 
 `vite.config.ts` sets `base: '/Learning-Dutch-101/'` — change if your repo name differs.
 
+### Beta branch (Pip wardrobe + Language Battle)
+
+See **`docs/beta-pip-language-battle.md`**. Branch `beta/pip-language-battle` is isolated from the live site. Multiplayer needs a free Firebase Realtime Database (env keys in `.env.example`).
+
 ## Testing
 
 See **`docs/testing.md`**.

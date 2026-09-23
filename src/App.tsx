@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppStateProvider } from '@/state/AppState';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -12,6 +13,22 @@ import { AssessmentsPage } from '@/pages/AssessmentsPage';
 import { ProgressPage } from '@/pages/ProgressPage';
 import { ResourcesPage } from '@/pages/ResourcesPage';
 import { AboutPage } from '@/pages/AboutPage';
+import { WardrobePage } from '@/pages/WardrobePage';
+
+const BattleLobbyPage = lazy(() =>
+  import('@/pages/BattlePage').then((m) => ({ default: m.BattleLobbyPage })),
+);
+const BattleRoomPage = lazy(() =>
+  import('@/pages/BattlePage').then((m) => ({ default: m.BattleRoomPage })),
+);
+
+function BattleFallback() {
+  return (
+    <section className="card card--panel">
+      <h1>Loading battle…</h1>
+    </section>
+  );
+}
 
 export default function App() {
   return (
@@ -28,6 +45,23 @@ export default function App() {
               <Route path="/practice" element={<PracticePage />} />
               <Route path="/assessments" element={<AssessmentsPage />} />
               <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/wardrobe" element={<WardrobePage />} />
+              <Route
+                path="/battle"
+                element={
+                  <Suspense fallback={<BattleFallback />}>
+                    <BattleLobbyPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/battle/:code"
+                element={
+                  <Suspense fallback={<BattleFallback />}>
+                    <BattleRoomPage />
+                  </Suspense>
+                }
+              />
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/about" element={<AboutPage />} />
             </Route>

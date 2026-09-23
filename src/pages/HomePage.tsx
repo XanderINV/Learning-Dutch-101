@@ -3,8 +3,11 @@ import { BRAND } from '@/brand';
 import { modules } from '@/content/curriculum';
 import { getDueItems } from '@/lib/review';
 import { countVocabularyLearned } from '@/lib/progress';
+import { getMascotState } from '@/lib/mascot';
+import { getEquippedSpeechLine } from '@/lib/cosmetics';
 import { useAppState } from '@/state/AppState';
 import { ProgressBar } from '@/components/ProgressBar';
+import { PipAvatar } from '@/components/Mascot/PipAvatar';
 
 export function HomePage() {
   const { activeProfile, updateSettings } = useAppState();
@@ -13,6 +16,8 @@ export function HomePage() {
   const completedLessons = activeProfile.progress.lessons.length;
   const totalLessons = modules.reduce((n, m) => n + m.lessons.length, 0);
   const levelLabel = activeProfile.progress.currentLevel.toUpperCase();
+  const mascot = getMascotState(activeProfile);
+  const speech = getEquippedSpeechLine(activeProfile.cosmetics);
 
   return (
     <>
@@ -24,6 +29,28 @@ export function HomePage() {
           map.
         </p>
       </header>
+
+      <section className="home-pip card card--panel" aria-label="Pip">
+        <PipAvatar
+          stage={mascot.stage}
+          mood={mascot.mood}
+          equipped={activeProfile.cosmetics.equipped}
+          size="md"
+        />
+        <div>
+          <h2>{mascot.title}</h2>
+          {speech ? <p className="mascot__speech">“{speech}”</p> : null}
+          <p className="muted">{mascot.tip}</p>
+          <div className="btn-row">
+            <Link className="btn btn--secondary" to="/wardrobe">
+              Pip wardrobe
+            </Link>
+            <Link className="btn btn--primary" to="/battle">
+              Language Battle
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <div className="stat-strip" role="group" aria-label="Learning snapshot">
         <div className="stat-tile">

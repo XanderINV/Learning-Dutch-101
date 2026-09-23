@@ -1,8 +1,13 @@
 import type { CefrLevel } from '@/content/types';
 import type { ReviewItem } from '@/lib/review';
 import { createReviewItem } from '@/lib/review';
+import {
+  emptyCosmetics,
+  syncCosmeticUnlocks,
+  type ProfileCosmetics,
+} from '@/lib/cosmetics';
 
-export const STORAGE_VERSION = 1;
+export const STORAGE_VERSION = 2;
 export const STORAGE_KEY = 'samen-nederlands-state';
 
 export type ProfileIcon = 'leaf' | 'bike' | 'book' | 'coffee' | 'windmill' | 'tulip';
@@ -57,6 +62,8 @@ export interface Profile {
   assessmentHistory: AssessmentHistoryEntry[];
   streak: StreakState;
   settings: ProfileSettings;
+  /** Pip wardrobe unlocks & equipped cosmetics (local with progress). */
+  cosmetics: ProfileCosmetics;
 }
 
 export interface AppStorageState {
@@ -97,6 +104,7 @@ export function createDefaultProfile(name: string, index = 0): Profile {
       onboardingComplete: false,
       startPath: null,
     },
+    cosmetics: emptyCosmetics(),
   };
 }
 
@@ -130,18 +138,30 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function ensureProfileCosmetics(profile: Profile): Profile {
+  const withCosmetics: Profile = {
+    ...profile,
+    cosmetics: profile.cosmetics ?? emptyCosmetics(),
+  };
+  return syncCosmeticUnlocks(withCosmetics);
+}
+
 export function migrate(raw: unknown): AppStorageState {
   if (!isRecord(raw)) {
     return createDefaultState();
   }
   const version = typeof raw.version === 'number' ? raw.version : 0;
-  if (version === STORAGE_VERSION) {
-    return raw as unknown as AppStorageState;
+  if (version === STORAGE_VERSION && Array.isArray(raw.profiles)) {
+    const state = raw as unknown as AppStorageState;
+    return {
+      ...state,
+      profiles: state.profiles.map(ensureProfileCosmetics),
+    };
   }
   if (version < STORAGE_VERSION) {
     const base = createDefaultState();
     if (Array.isArray(raw.profiles) && raw.profiles.length > 0) {
-      base.profiles = raw.profiles as Profile[];
+      base.profiles = (raw.profiles as Profile[]).map(ensureProfileCosmetics);
       base.activeProfileId =
         typeof raw.activeProfileId === 'string'
           ? raw.activeProfileId
