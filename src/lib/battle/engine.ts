@@ -31,9 +31,10 @@ export type BattleQuestion = BattleQuestionPublic & {
 };
 
 export type RoundAnswer = {
-  choiceIndex: 0 | 1 | 2 | 3 | null;
+  /** -1 or null = no answer yet */
+  choiceIndex: 0 | 1 | 2 | 3 | -1 | null;
+  /** 0 or null = not submitted */
   submittedAt: number | null;
-  /** Graded server-side / by shared engine — not client-reported. */
   correct: boolean | null;
 };
 
@@ -51,8 +52,13 @@ export type RoundState = {
   hpAfter: { a: number; b: number } | null;
 };
 
+/** Sentinels Firebase will keep (it drops null / empty arrays). */
 export function emptyAnswer(): RoundAnswer {
-  return { choiceIndex: null, submittedAt: null, correct: null };
+  return { choiceIndex: -1, submittedAt: 0, correct: false };
+}
+
+export function hasSubmitted(answer: RoundAnswer | undefined): boolean {
+  return (answer?.submittedAt ?? 0) > 0;
 }
 
 export type RoundResolution = {
@@ -177,9 +183,9 @@ export function gradeChoice(
   submittedAt: number | null,
   deadlineAt: number,
 ): boolean {
-  if (choiceIndex === null || submittedAt === null) return false;
+  if (choiceIndex === null || choiceIndex < 0 || choiceIndex > 3) return false;
+  if (submittedAt === null || submittedAt <= 0) return false;
   if (submittedAt > deadlineAt) return false;
-  if (choiceIndex < 0 || choiceIndex > 3) return false;
   return choiceIndex === correctIndex;
 }
 

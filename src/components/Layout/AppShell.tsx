@@ -10,7 +10,7 @@ const links = [
   { to: '/curriculum', label: 'Curriculum' },
   { to: '/review', label: 'Review' },
   { to: '/practice', label: 'Practice' },
-  { to: '/battle', label: 'Battle' },
+  { to: '/battle', label: 'Beta: Battle' },
   { to: '/wardrobe', label: 'Pip' },
   { to: '/assessments', label: 'Assessments' },
   { to: '/progress', label: 'Progress' },

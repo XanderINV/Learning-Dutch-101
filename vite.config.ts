@@ -6,9 +6,13 @@ import { defineConfig } from 'vite'
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
+// GitHub Pages lives under /Learning-Dutch-101/; Firebase Hosting is site root (/).
+// Override with VITE_BASE_PATH=/ when building for Firebase preview.
+const base = process.env.VITE_BASE_PATH || '/Learning-Dutch-101/'
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/Learning-Dutch-101/',
+  base,
   plugins: [react()],
   resolve: {
     alias: {

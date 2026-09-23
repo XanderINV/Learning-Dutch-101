@@ -14,7 +14,14 @@ import { useAppState } from '@/state/AppState';
 import { PipAvatar } from '@/components/Mascot/PipAvatar';
 import { SLOT_LABELS } from '@/components/Mascot/LearningBuddy';
 
-const SLOTS: CosmeticSlot[] = ['hat', 'accessory', 'extra', 'background', 'speech'];
+const SLOTS: CosmeticSlot[] = [
+  'color',
+  'hat',
+  'accessory',
+  'extra',
+  'background',
+  'speech',
+];
 
 export function WardrobePage() {
   const { activeProfile, syncCosmetics, setEquippedCosmetic } = useAppState();
@@ -36,7 +43,8 @@ export function WardrobePage() {
         <p className="eyebrow">Beta · Pip rewards</p>
         <h1>Pip wardrobe</h1>
         <p>
-          Unlock looks through real learning milestones. Cosmetics never change
+          Unlock looks through real learning milestones. Free starters are ready
+          now so you can style Pip before any course. Cosmetics never change
           battle HP or question difficulty — they layer on top of Pip’s current
           evolution.
         </p>

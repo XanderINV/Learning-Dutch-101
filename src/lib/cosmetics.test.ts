@@ -9,7 +9,16 @@ import {
 import { createDefaultProfile } from '@/lib/storage';
 
 describe('cosmetics unlocks', () => {
-  it('awards each milestone only once', () => {
+  it('awards free starter cosmetics immediately', () => {
+    const profile = createDefaultProfile('Ella', 0);
+    const synced = syncCosmeticUnlocks(profile);
+    expect(synced.cosmetics.unlocked).toContain('color-classic');
+    expect(synced.cosmetics.unlocked).toContain('hat-bow');
+    expect(synced.cosmetics.unlocked).toContain('glasses-round');
+    expect(synced.cosmetics.unlocked).toContain('speech-hoi');
+  });
+
+  it('awards each milestone item without blocking siblings', () => {
     const profile = createDefaultProfile('Ella', 0);
     profile.progress.lessons = [
       { moduleId: 'a', lessonId: '1', completedAt: '2026-01-01' },
@@ -18,6 +27,7 @@ describe('cosmetics unlocks', () => {
     ];
     const once = syncCosmeticUnlocks(profile);
     expect(once.cosmetics.unlocked).toContain('orange-beanie');
+    expect(once.cosmetics.unlocked).toContain('color-sky');
     const awardedCount = once.cosmetics.awardedMilestones.length;
     const twice = syncCosmeticUnlocks(once);
     expect(twice.cosmetics.awardedMilestones.length).toBe(awardedCount);

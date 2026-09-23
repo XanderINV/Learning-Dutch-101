@@ -1,21 +1,17 @@
 import { useId } from 'react';
 import type { MascotMood, MascotStage } from '@/lib/mascot';
-import type { EquippedCosmetics } from '@/lib/cosmetics';
+import { getPipColorPalette, type EquippedCosmetics } from '@/lib/cosmetics';
 
 export type PipAvatarProps = {
   stage: MascotStage;
   mood: MascotMood;
   equipped?: EquippedCosmetics;
-  /** Reaction overlay for battles */
   reaction?: 'idle' | 'correct' | 'wrong' | 'cheer';
   className?: string;
   title?: string;
   size?: 'sm' | 'md' | 'lg';
 };
 
-/**
- * Shared Pip renderer: evolution stages stay progressive; wardrobe cosmetics layer on top.
- */
 export function PipAvatar({
   stage,
   mood,
@@ -28,19 +24,28 @@ export function PipAvatar({
   const titleId = useId();
   const eyeOpen = mood !== 'sleepy';
   const lonely = mood === 'lonely';
-  const happy = mood === 'happy' || mood === 'proud' || reaction === 'correct' || reaction === 'cheer';
+  const happy =
+    mood === 'happy' ||
+    mood === 'proud' ||
+    reaction === 'correct' ||
+    reaction === 'cheer';
   const proud = mood === 'proud' || stage === 'champion';
   const showLeaf = stage !== 'hatchling';
-  const showPack = stage === 'explorer' || stage === 'streaker' || stage === 'champion';
+  const showPack =
+    stage === 'explorer' || stage === 'streaker' || stage === 'champion';
   const showScarf = stage === 'streaker' || stage === 'champion';
   const showCrown = stage === 'champion';
   const showSparkles =
-    stage === 'streaker' || stage === 'champion' || proud || reaction === 'cheer';
+    stage === 'streaker' ||
+    stage === 'champion' ||
+    proud ||
+    reaction === 'cheer';
 
   const hat = equipped.hat;
   const accessory = equipped.accessory;
   const extra = equipped.extra;
   const background = equipped.background;
+  const palette = getPipColorPalette(equipped.color);
 
   const bodyScale =
     stage === 'hatchling'
@@ -54,11 +59,30 @@ export function PipAvatar({
             : 1.08;
 
   const sizeClass =
-    size === 'sm' ? 'pip-avatar--sm' : size === 'lg' ? 'pip-avatar--lg' : 'pip-avatar--md';
+    size === 'sm'
+      ? 'pip-avatar--sm'
+      : size === 'lg'
+        ? 'pip-avatar--lg'
+        : 'pip-avatar--md';
+
+  const bgClass =
+    background === 'canal-dusk'
+      ? ' pip-avatar--canal'
+      : background === 'bg-mint'
+        ? ' pip-avatar--mint'
+        : background === 'bg-tulip-field'
+          ? ' pip-avatar--tulips'
+          : '';
+
+  const fancyHat =
+    hat === 'bike-helmet' ||
+    hat === 'orange-beanie' ||
+    hat === 'hat-bow' ||
+    hat === 'hat-soft-cap';
 
   return (
     <div
-      className={`pip-avatar ${sizeClass} pip-avatar--react-${reaction}${background === 'canal-dusk' ? ' pip-avatar--canal' : ''} ${className}`.trim()}
+      className={`pip-avatar ${sizeClass} pip-avatar--react-${reaction}${bgClass} ${className}`.trim()}
     >
       <svg
         viewBox="0 0 160 160"
@@ -69,20 +93,35 @@ export function PipAvatar({
         <title id={titleId}>{title}</title>
         <defs>
           <radialGradient id={`${titleId}-body`} cx="35%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="#7fd3c7" />
-            <stop offset="55%" stopColor="#2f9e94" />
-            <stop offset="100%" stopColor="#0f6e73" />
+            <stop offset="0%" stopColor={palette.bodyLight} />
+            <stop offset="55%" stopColor={palette.bodyMid} />
+            <stop offset="100%" stopColor={palette.bodyDark} />
           </radialGradient>
           <radialGradient id={`${titleId}-belly`} cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#e8fff8" />
-            <stop offset="100%" stopColor="#b8ebe2" />
+            <stop offset="0%" stopColor={palette.bellyLight} />
+            <stop offset="100%" stopColor={palette.bellyDark} />
           </radialGradient>
           <linearGradient id={`${titleId}-canal`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fcd9a8" />
             <stop offset="45%" stopColor="#7eb6c9" />
             <stop offset="100%" stopColor="#1e5f74" />
           </linearGradient>
-          <filter id={`${titleId}-soft`} x="-20%" y="-20%" width="140%" height="140%">
+          <linearGradient id={`${titleId}-mint`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#d1fae5" />
+            <stop offset="100%" stopColor="#a7f3d0" />
+          </linearGradient>
+          <linearGradient id={`${titleId}-tulips`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#bae6fd" />
+            <stop offset="55%" stopColor="#86efac" />
+            <stop offset="100%" stopColor="#f9a8d4" />
+          </linearGradient>
+          <filter
+            id={`${titleId}-soft`}
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
             <feDropShadow
               dx="0"
               dy="4"
@@ -95,13 +134,51 @@ export function PipAvatar({
 
         {background === 'canal-dusk' ? (
           <g aria-hidden="true">
-            <rect x="8" y="8" width="144" height="144" rx="28" fill={`url(#${titleId}-canal)`} />
+            <rect
+              x="8"
+              y="8"
+              width="144"
+              height="144"
+              rx="28"
+              fill={`url(#${titleId}-canal)`}
+            />
             <path
               d="M20 100 L40 70 L55 90 L70 55 L90 85 L110 60 L140 100 Z"
               fill="#0f3d4a"
               opacity="0.55"
             />
-            <ellipse cx="80" cy="118" rx="54" ry="10" fill="#0b4a5c" opacity="0.45" />
+            <ellipse
+              cx="80"
+              cy="118"
+              rx="54"
+              ry="10"
+              fill="#0b4a5c"
+              opacity="0.45"
+            />
+          </g>
+        ) : background === 'bg-mint' ? (
+          <rect
+            x="8"
+            y="8"
+            width="144"
+            height="144"
+            rx="28"
+            fill={`url(#${titleId}-mint)`}
+          />
+        ) : background === 'bg-tulip-field' ? (
+          <g aria-hidden="true">
+            <rect
+              x="8"
+              y="8"
+              width="144"
+              height="144"
+              rx="28"
+              fill={`url(#${titleId}-tulips)`}
+            />
+            <ellipse cx="40" cy="120" rx="8" ry="14" fill="#e11d48" />
+            <ellipse cx="70" cy="115" rx="8" ry="14" fill="#f59e0b" />
+            <ellipse cx="100" cy="122" rx="8" ry="14" fill="#ec4899" />
+            <ellipse cx="125" cy="118" rx="8" ry="14" fill="#ef4444" />
           </g>
         ) : (
           <ellipse cx="80" cy="138" rx="38" ry="8" fill="rgb(15 28 46 / 12%)" />
@@ -121,7 +198,7 @@ export function PipAvatar({
             </g>
           ) : null}
 
-          {showCrown && hat !== 'bike-helmet' && hat !== 'orange-beanie' ? (
+          {showCrown && !fancyHat ? (
             <g aria-hidden="true">
               <path
                 d="M52 44 L62 28 L80 40 L98 28 L108 44 Z"
@@ -157,6 +234,20 @@ export function PipAvatar({
                 strokeWidth="2"
               />
               <path d="M52 64 L108 64" stroke="#fbbf24" strokeWidth="3" />
+            </g>
+          ) : null}
+
+          {hat === 'hat-bow' ? (
+            <g aria-hidden="true">
+              <path d="M68 40 L80 52 L92 40 L86 56 L74 56 Z" fill="#db2777" />
+              <circle cx="80" cy="52" r="5" fill="#9d174d" />
+            </g>
+          ) : null}
+
+          {hat === 'hat-soft-cap' ? (
+            <g aria-hidden="true">
+              <ellipse cx="80" cy="48" rx="34" ry="14" fill="#334155" />
+              <path d="M46 50 Q80 62 120 50" fill="#1e293b" />
             </g>
           ) : null}
 
@@ -206,7 +297,13 @@ export function PipAvatar({
             fill={`url(#${titleId}-body)`}
             filter={`url(#${titleId}-soft)`}
           />
-          <ellipse cx="80" cy="100" rx="28" ry="22" fill={`url(#${titleId}-belly)`} />
+          <ellipse
+            cx="80"
+            cy="100"
+            rx="28"
+            ry="22"
+            fill={`url(#${titleId}-belly)`}
+          />
 
           {showScarf ? (
             <g aria-hidden="true">
@@ -257,6 +354,17 @@ export function PipAvatar({
             </g>
           ) : null}
 
+          {extra === 'clogs-charm' ? (
+            <g aria-hidden="true">
+              <path
+                d="M28 118 Q34 108 48 112 L46 122 Q36 124 28 118"
+                fill="#f59e0b"
+                stroke="#b45309"
+                strokeWidth="1.2"
+              />
+            </g>
+          ) : null}
+
           {accessory === 'tulip-pin' ? (
             <g aria-hidden="true">
               <path d="M118 78 Q124 68 130 78 Q124 74 118 78" fill="#e11d48" />
@@ -266,13 +374,44 @@ export function PipAvatar({
 
           {accessory === 'windmill-badge' ? (
             <g aria-hidden="true">
-              <circle cx="42" cy="78" r="11" fill="#fef3c7" stroke="#b45309" strokeWidth="1.5" />
+              <circle
+                cx="42"
+                cy="78"
+                r="11"
+                fill="#fef3c7"
+                stroke="#b45309"
+                strokeWidth="1.5"
+              />
               <path
                 d="M42 78 L42 68 M42 78 L52 78 M42 78 L42 88 M42 78 L32 78"
                 stroke="#92400e"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
+            </g>
+          ) : null}
+
+          {accessory === 'daisy-pin' ? (
+            <g aria-hidden="true">
+              <circle cx="118" cy="78" r="4" fill="#fbbf24" />
+              <circle cx="118" cy="70" r="4" fill="#fff" stroke="#e2e8f0" />
+              <circle cx="124" cy="74" r="4" fill="#fff" stroke="#e2e8f0" />
+              <circle cx="124" cy="82" r="4" fill="#fff" stroke="#e2e8f0" />
+              <circle cx="112" cy="74" r="4" fill="#fff" stroke="#e2e8f0" />
+              <circle cx="112" cy="82" r="4" fill="#fff" stroke="#e2e8f0" />
+            </g>
+          ) : null}
+
+          {accessory === 'glasses-round' ? (
+            <g
+              aria-hidden="true"
+              fill="none"
+              stroke="#0f172a"
+              strokeWidth="2.5"
+            >
+              <circle cx="64" cy="84" r="12" />
+              <circle cx="96" cy="84" r="12" />
+              <path d="M76 84 H84" />
             </g>
           ) : null}
 
@@ -300,7 +439,12 @@ export function PipAvatar({
               ) : null}
             </g>
           ) : (
-            <g stroke="#0f1c2e" strokeWidth="3" strokeLinecap="round" fill="none">
+            <g
+              stroke="#0f1c2e"
+              strokeWidth="3"
+              strokeLinecap="round"
+              fill="none"
+            >
               <path d="M56 84 Q64 78 72 84" />
               <path d="M88 84 Q96 78 104 84" />
             </g>
@@ -308,8 +452,22 @@ export function PipAvatar({
 
           {happy || proud ? (
             <g aria-hidden="true">
-              <ellipse cx="52" cy="96" rx="7" ry="4" fill="#fb7185" opacity="0.55" />
-              <ellipse cx="108" cy="96" rx="7" ry="4" fill="#fb7185" opacity="0.55" />
+              <ellipse
+                cx="52"
+                cy="96"
+                rx="7"
+                ry="4"
+                fill="#fb7185"
+                opacity="0.55"
+              />
+              <ellipse
+                cx="108"
+                cy="96"
+                rx="7"
+                ry="4"
+                fill="#fb7185"
+                opacity="0.55"
+              />
             </g>
           ) : null}
 
@@ -333,8 +491,8 @@ export function PipAvatar({
             />
           )}
 
-          <ellipse cx="64" cy="128" rx="12" ry="8" fill="#0b585c" />
-          <ellipse cx="96" cy="128" rx="12" ry="8" fill="#0b585c" />
+          <ellipse cx="64" cy="128" rx="12" ry="8" fill={palette.feet} />
+          <ellipse cx="96" cy="128" rx="12" ry="8" fill={palette.feet} />
         </g>
       </svg>
     </div>

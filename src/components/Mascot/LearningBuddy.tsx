@@ -10,6 +10,7 @@ import { useAppState } from '@/state/AppState';
 import { PipAvatar } from '@/components/Mascot/PipAvatar';
 
 const SLOT_LABELS: Record<CosmeticSlot, string> = {
+  color: 'Colours',
   hat: 'Hats',
   accessory: 'Accessories',
   extra: 'Extras',

@@ -5,8 +5,7 @@
     "battles": {
       "$code": {
         ".read": true,
-        ".write": "newData.exists() && newData.hasChildren(['code', 'phase', 'players', 'hp']) && (!data.exists() || data.child('expiresAt').val() > now)",
-        ".validate": "newData.child('code').val() === $code && newData.child('players').hasChildren(['a']) && (!newData.child('players').child('b').exists() || newData.child('players').child('b').hasChildren(['id', 'displayName']))"
+        ".write": true
       }
     }
   }

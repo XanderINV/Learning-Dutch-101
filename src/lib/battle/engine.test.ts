@@ -92,8 +92,10 @@ describe('battle resolveRound', () => {
 describe('gradeChoice', () => {
   it('rejects timeout and late answers', () => {
     expect(gradeChoice(1, 1, null, 1000)).toBe(false);
+    expect(gradeChoice(1, 1, 0, 1000)).toBe(false);
     expect(gradeChoice(1, 1, 1001, 1000)).toBe(false);
     expect(gradeChoice(1, null, 900, 1000)).toBe(false);
+    expect(gradeChoice(1, -1, 900, 1000)).toBe(false);
   });
 
   it('accepts on-time correct choice only', () => {

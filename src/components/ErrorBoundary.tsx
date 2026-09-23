@@ -30,7 +30,13 @@ export class ErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               className="btn btn--primary"
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                this.setState({ error: null });
+                window.location.assign(
+                  `${window.location.pathname}${window.location.search}#/battle`,
+                );
+                window.location.reload();
+              }}
             >
               Reload
             </button>

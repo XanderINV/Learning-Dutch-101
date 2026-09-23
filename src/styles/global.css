@@ -1554,3 +1554,8 @@ fieldset label:hover {
     animation: none;
   }
 }
+
+.pip-avatar--mint .pip-avatar__svg,
+.pip-avatar--tulips .pip-avatar__svg {
+  border-radius: 28%;
+}

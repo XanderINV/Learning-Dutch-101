@@ -25,7 +25,9 @@ import {
   type BattleRoom,
   type Seat,
 } from '@/lib/battle/room';
-import type { BattleDifficulty } from '@/lib/battle/engine';
+import { hasSubmitted, type BattleDifficulty } from '@/lib/battle/engine';
+import { useBattleSounds } from '@/lib/battle/useBattleSounds';
+import { playTestBeep } from '@/lib/battle/sounds';
 import { useAppState } from '@/state/AppState';
 import { PipAvatar } from '@/components/Mascot/PipAvatar';
 
@@ -75,9 +77,9 @@ function PlayerCard({
   return (
     <div className={`battle-player${you ? ' battle-player--you' : ''}`}>
       <PipAvatar
-        stage={look.look.stage as MascotStage}
-        mood={look.look.mood as MascotMood}
-        equipped={look.look.equipped}
+        stage={(look.look?.stage as MascotStage) || 'hatchling'}
+        mood={(look.look?.mood as MascotMood) || 'curious'}
+        equipped={look.look?.equipped ?? {}}
         size="md"
         reaction={reaction ?? 'idle'}
       />
@@ -86,7 +88,7 @@ function PlayerCard({
           {name}
           {you ? ' (you)' : ''}
         </p>
-        {look.look.speechLine ? (
+        {look.look?.speechLine ? (
           <p className="mascot__speech">“{look.look.speechLine}”</p>
         ) : null}
         {typeof hp === 'number' ? <HpBar label="HP" hp={hp} /> : null}
@@ -271,11 +273,43 @@ export function BattleRoomPage() {
   const seat: Seat | null = room ? mySeat(room) : null;
   const question = room ? currentQuestionPublic(room) : null;
 
+  const secondsLeftPreview =
+    room?.phase === 'answering' && room.roundDeadlineAt
+      ? Math.max(0, Math.ceil((room.roundDeadlineAt - now) / 1000))
+      : room?.phase === 'countdown' && room.countdownEndsAt
+        ? Math.max(0, Math.ceil((room.countdownEndsAt - now) / 1000))
+        : room?.phase === 'reveal' && room.revealUntil
+          ? Math.max(0, Math.ceil((room.revealUntil - now) / 1000))
+          : null;
+
+  const myCorrectPreview =
+    room && seat && room.phase === 'reveal'
+      ? Boolean(room.answers?.[seat]?.correct)
+      : null;
+
+  const { muted, toggleMute, unlock } = useBattleSounds({
+    phase: room?.phase,
+    secondsLeft: secondsLeftPreview,
+    myCorrect: myCorrectPreview,
+    roundIndex: room?.roundIndex,
+  });
+
   useEffect(() => {
     if (!configured || !code) return;
     const unsub = subscribeBattleRoom(code, setRoom);
     return unsub;
   }, [code, configured]);
+
+  // iOS often needs a touch gesture on the page before Web Audio works.
+  useEffect(() => {
+    const unlockOnce = () => unlock();
+    window.addEventListener('touchstart', unlockOnce, { once: true, passive: true });
+    window.addEventListener('pointerdown', unlockOnce, { once: true });
+    return () => {
+      window.removeEventListener('touchstart', unlockOnce);
+      window.removeEventListener('pointerdown', unlockOnce);
+    };
+  }, [unlock]);
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 250);
@@ -308,22 +342,25 @@ export function BattleRoomPage() {
 
   const onReady = useCallback(async () => {
     if (!code || !seat || !room) return;
+    unlock();
     const me = room.players[seat];
     await setPlayerReady(code, !me?.ready);
-  }, [code, seat, room]);
+  }, [code, seat, room, unlock]);
 
   const onStart = useCallback(async () => {
     if (!code) return;
+    unlock();
     try {
       await startBattle(code);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start');
     }
-  }, [code]);
+  }, [code, unlock]);
 
   const onAnswer = useCallback(
     async (index: 0 | 1 | 2 | 3) => {
       if (!code || selected !== null) return;
+      unlock();
       setSelected(index);
       try {
         await submitBattleAnswer(code, index);
@@ -332,7 +369,7 @@ export function BattleRoomPage() {
         setError(e instanceof Error ? e.message : 'Submit failed');
       }
     },
-    [code, selected],
+    [code, selected, unlock],
   );
 
   const onLeave = useCallback(async () => {
@@ -391,18 +428,18 @@ export function BattleRoomPage() {
           ? Math.max(0, Math.ceil((room.revealUntil - now) / 1000))
           : null;
 
-  const myAnswered = room.answers[seat].submittedAt != null;
-  const foeAnswered = foe ? room.answers[foeSeat].submittedAt != null : false;
+  const myAnswered = hasSubmitted(room.answers?.[seat]);
+  const foeAnswered = foe ? hasSubmitted(room.answers?.[foeSeat]) : false;
 
   const myReaction =
     room.phase === 'reveal'
-      ? room.answers[seat].correct
+      ? room.answers?.[seat]?.correct
         ? 'correct'
         : 'wrong'
       : 'idle';
   const foeReaction =
     room.phase === 'reveal'
-      ? room.answers[foeSeat].correct
+      ? room.answers?.[foeSeat]?.correct
         ? 'correct'
         : 'wrong'
       : 'idle';
@@ -501,6 +538,28 @@ export function BattleRoomPage() {
             Invite: <code className="invite-code">{inviteUrl}</code>
           </p>
           <div className="btn-row">
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              onClick={() => {
+                unlock();
+                toggleMute();
+              }}
+            >
+              {muted ? 'Sound off' : 'Sound on'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              onClick={() => {
+                unlock();
+                playTestBeep();
+              }}
+            >
+              Test sound
+            </button>
+          </div>
+          <div className="btn-row">
             <button type="button" className="btn btn--secondary" onClick={() => void onReady()}>
               {me.ready ? 'Unready' : 'Ready'}
             </button>
@@ -534,7 +593,8 @@ export function BattleRoomPage() {
         <section className="card card--panel battle-question">
           <div className="battle-question__meta">
             <span>
-              Round {room.roundIndex + 1}/{room.questionIds.length}
+              Round {room.roundIndex + 1}/
+              {Math.max(1, (room.questionIds ?? []).filter((id) => id !== '_pending').length)}
             </span>
             <span
               className={`battle-timer${secondsLeft !== null && secondsLeft <= 3 ? ' is-urgent' : ''}`}
@@ -579,10 +639,22 @@ export function BattleRoomPage() {
           </p>
           <p>{question.explanation}</p>
           <p className="muted">
-            You were {room.answers[seat].correct ? 'correct' : 'incorrect'}. Next
-            question in {secondsLeft}s…
+            {hasSubmitted(room.answers?.[seat])
+              ? room.answers?.[seat]?.correct
+                ? 'You were correct.'
+                : 'You were incorrect.'
+              : 'You did not answer in time (no answer counts as incorrect).'}{' '}
+            Next question in {secondsLeft}s…
           </p>
         </section>
+      ) : null}
+
+      {(room.phase === 'answering' || room.phase === 'reveal' || room.phase === 'countdown') ? (
+        <p className="muted small">
+          <button type="button" className="btn btn--ghost btn--small" onClick={toggleMute}>
+            {muted ? 'Unmute battle sounds' : 'Mute battle sounds'}
+          </button>
+        </p>
       ) : null}
 
       {error ? (

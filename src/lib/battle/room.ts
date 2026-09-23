@@ -18,6 +18,7 @@ import {
   emptyAnswer,
   generateRoomCode,
   gradeChoice,
+  hasSubmitted,
   resolveRound,
   type BattleDifficulty,
   type BattleOutcome,
@@ -25,7 +26,7 @@ import {
   type RoundAnswer,
 } from '@/lib/battle/engine';
 import { getBattleDatabase } from '@/lib/battle/firebase';
-import { getQuestionById, pickMatchQuestions } from '@/lib/battle/questions';
+import { getQuestionById, pickMatchQuestions, questionForRoomRound } from '@/lib/battle/questions';
 
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const PLAYER_KEY = 'samen-battle-player-id';
@@ -52,6 +53,11 @@ export type BattleRoom = {
   questionIds: string[];
   /** correctIndex per question — used only for authoritative grading in transactions */
   correctIndexes: number[];
+  /**
+   * Exact option order per round. Both devices must use this list so indexes match grading.
+   * Firebase may store nested arrays as objects — normalizeRoom restores them.
+   */
+  optionsByRound: Array<[string, string, string, string]>;
   roundIndex: number;
   countdownEndsAt: number | null;
   roundDeadlineAt: number | null;
@@ -92,6 +98,141 @@ function nowMs(): number {
   return Date.now();
 }
 
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (value && typeof value === 'object') {
+    return Object.keys(value as object)
+      .sort((a, b) => Number(a) - Number(b))
+      .map((k) => String((value as Record<string, unknown>)[k]));
+  }
+  return [];
+}
+
+function asNumberArray(value: unknown): number[] {
+  if (Array.isArray(value)) return value.map((n) => Number(n));
+  if (value && typeof value === 'object') {
+    return Object.keys(value as object)
+      .sort((a, b) => Number(a) - Number(b))
+      .map((k) => Number((value as Record<string, unknown>)[k]));
+  }
+  return [];
+}
+
+function asOptionsByRound(
+  value: unknown,
+): Array<[string, string, string, string]> {
+  const rows = Array.isArray(value)
+    ? value
+    : value && typeof value === 'object'
+      ? Object.keys(value as object)
+          .sort((a, b) => Number(a) - Number(b))
+          .map((k) => (value as Record<string, unknown>)[k])
+      : [];
+  return rows.map((row) => {
+    const opts = asStringArray(row);
+    return [opts[0] ?? '', opts[1] ?? '', opts[2] ?? '', opts[3] ?? ''] as [
+      string,
+      string,
+      string,
+      string,
+    ];
+  });
+}
+
+function normalizeChoiceIndex(
+  value: unknown,
+): 0 | 1 | 2 | 3 | -1 | null {
+  if (value === undefined || value === null) return -1;
+  const n = Number(value);
+  if (n === -1) return -1;
+  if (n === 0 || n === 1 || n === 2 || n === 3) return n;
+  return -1;
+}
+
+/** Firebase omits nulls and empty arrays — restore defaults after every read. */
+export function normalizeRoom(raw: BattleRoom): BattleRoom {
+  const answers = raw.answers ?? { a: emptyAnswer(), b: emptyAnswer() };
+  const rawWithOpts = raw as BattleRoom & { optionsByRound?: unknown };
+  return {
+    ...raw,
+    questionIds: asStringArray(raw.questionIds),
+    correctIndexes: asNumberArray(raw.correctIndexes),
+    optionsByRound: asOptionsByRound(rawWithOpts.optionsByRound),
+    hp: {
+      a: Number(raw.hp?.a ?? BATTLE_START_HP),
+      b: Number(raw.hp?.b ?? BATTLE_START_HP),
+    },
+    answers: {
+      a: {
+        ...emptyAnswer(),
+        ...answers.a,
+        choiceIndex: normalizeChoiceIndex(answers.a?.choiceIndex),
+        submittedAt: Number(answers.a?.submittedAt ?? 0),
+        correct:
+          answers.a?.correct === true
+            ? true
+            : answers.a?.correct === false
+              ? false
+              : null,
+      },
+      b: {
+        ...emptyAnswer(),
+        ...answers.b,
+        choiceIndex: normalizeChoiceIndex(answers.b?.choiceIndex),
+        submittedAt: Number(answers.b?.submittedAt ?? 0),
+        correct:
+          answers.b?.correct === true
+            ? true
+            : answers.b?.correct === false
+              ? false
+              : null,
+      },
+    },
+    players: {
+      a: raw.players?.a
+        ? {
+            ...raw.players.a,
+            look: {
+              stage: raw.players.a.look?.stage ?? 'hatchling',
+              mood: raw.players.a.look?.mood ?? 'curious',
+              equipped: raw.players.a.look?.equipped ?? {},
+              speechLine: raw.players.a.look?.speechLine ?? null,
+            },
+          }
+        : null,
+      b: raw.players?.b
+        ? {
+            ...raw.players.b,
+            look: {
+              stage: raw.players.b.look?.stage ?? 'hatchling',
+              mood: raw.players.b.look?.mood ?? 'curious',
+              equipped: raw.players.b.look?.equipped ?? {},
+              speechLine: raw.players.b.look?.speechLine ?? null,
+            },
+          }
+        : null,
+    },
+    roundIndex: Number(raw.roundIndex ?? 0),
+    seed: Number(raw.seed ?? 0),
+    roundResolved: Boolean(raw.roundResolved),
+    outcome: (raw.outcome as BattleOutcome) || null,
+    outcomeReason: (raw.outcomeReason as BattleRoom['outcomeReason']) || null,
+    leftBy: (raw.leftBy as Seat) || null,
+    countdownEndsAt: raw.countdownEndsAt ?? null,
+    roundDeadlineAt: raw.roundDeadlineAt ?? null,
+    revealUntil: raw.revealUntil ?? null,
+  };
+}
+
+function sanitizeLook(look: PipBattleLook): PipBattleLook {
+  return {
+    stage: look.stage || 'hatchling',
+    mood: look.mood || 'curious',
+    equipped: look.equipped ?? {},
+    speechLine: look.speechLine ?? '',
+  };
+}
+
 export async function createBattleRoom(input: {
   displayName: string;
   look: PipBattleLook;
@@ -113,7 +254,7 @@ export async function createBattleRoom(input: {
     displayName: input.displayName.trim() || 'Player',
     ready: false,
     connected: true,
-    look: input.look,
+    look: sanitizeLook(input.look),
     lastSeenAt: nowMs(),
   };
 
@@ -125,8 +266,10 @@ export async function createBattleRoom(input: {
     difficulty: input.difficulty ?? 'beginner',
     phase: 'lobby',
     seed: 0,
-    questionIds: [],
-    correctIndexes: [],
+    // Placeholder so Firebase does not drop empty arrays.
+    questionIds: ['_pending'],
+    correctIndexes: [-1],
+    optionsByRound: [['', '', '', '']],
     roundIndex: 0,
     countdownEndsAt: null,
     roundDeadlineAt: null,
@@ -136,9 +279,9 @@ export async function createBattleRoom(input: {
     roundResolved: false,
     outcome: null,
     outcomeReason: null,
-    players: { a: player, b: null },
+    players: { a: player },
     leftBy: null,
-  };
+  } as BattleRoom;
 
   await set(roomRef(code), room);
   const seatRef = ref(db, `battles/${code}/players/a/connected`);
@@ -151,59 +294,70 @@ export async function joinBattleRoom(input: {
   displayName: string;
   look: PipBattleLook;
 }): Promise<{ code: string; seat: Seat }> {
-  const code = input.code.trim().toUpperCase();
+  const code = input.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length < 4) {
+    throw new Error('Enter the full room code from the host screen.');
+  }
+
+  const db = getBattleDatabase();
   const playerId = getBattlePlayerId();
   const r = roomRef(code);
 
-  const result = await runTransaction(r, (current) => {
-    if (!current) return;
-    const room = current as BattleRoom;
-    if (room.expiresAt < nowMs()) return;
-    if (room.phase !== 'lobby') return;
-
-    // Reconnect to own seat
-    if (room.players.a?.id === playerId) {
-      room.players.a = {
-        ...room.players.a,
-        displayName: input.displayName.trim() || room.players.a.displayName,
-        look: input.look,
-        connected: true,
-        lastSeenAt: nowMs(),
-      };
-      return room;
-    }
-    if (room.players.b?.id === playerId) {
-      room.players.b = {
-        ...room.players.b,
-        displayName: input.displayName.trim() || room.players.b.displayName,
-        look: input.look,
-        connected: true,
-        lastSeenAt: nowMs(),
-      };
-      return room;
-    }
-
-    if (room.players.b) return; // full
-
-    room.players.b = {
-      id: playerId,
-      displayName: input.displayName.trim() || 'Player',
-      ready: false,
-      connected: true,
-      look: input.look,
-      lastSeenAt: nowMs(),
-    };
-    return room;
-  });
-
-  if (!result.committed || !result.snapshot.exists()) {
-    throw new Error('Could not join room. Check the code, or the room may be full or expired.');
+  const existing = await get(r);
+  if (!existing.exists()) {
+    throw new Error(
+      `No room found for code ${code}. Check you typed it exactly, and that both devices use the beta site.`,
+    );
   }
 
-  const room = result.snapshot.val() as BattleRoom;
-  const seat: Seat = room.players.a?.id === playerId ? 'a' : 'b';
-  const seatRef = ref(getBattleDatabase(), `battles/${code}/players/${seat}/connected`);
-  await onDisconnect(seatRef).set(false);
+  const preview = normalizeRoom(existing.val() as BattleRoom);
+  if (preview.expiresAt < nowMs()) {
+    throw new Error('This room has expired. Ask the host to create a new one.');
+  }
+  if (preview.phase !== 'lobby') {
+    throw new Error('This battle already started. Ask the host for a new room.');
+  }
+
+  // Already seated?
+  if (preview.players.a?.id === playerId || preview.players.b?.id === playerId) {
+    const seat: Seat = preview.players.a?.id === playerId ? 'a' : 'b';
+    await update(ref(db, `battles/${code}/players/${seat}`), {
+      displayName: input.displayName.trim() || 'Player',
+      look: sanitizeLook(input.look),
+      connected: true,
+      lastSeenAt: nowMs(),
+    });
+    await onDisconnect(ref(db, `battles/${code}/players/${seat}/connected`)).set(false);
+    return { code, seat };
+  }
+
+  if (preview.players.a && preview.players.b) {
+    throw new Error('This room is full (2 players already).');
+  }
+
+  const newPlayer: BattlePlayer = {
+    id: playerId,
+    displayName: input.displayName.trim() || 'Player',
+    ready: false,
+    connected: true,
+    look: sanitizeLook(input.look),
+    lastSeenAt: nowMs(),
+  };
+
+  // Only claim seat b (or a if missing) with a narrow transaction — avoids
+  // full-tree aborts from null/empty Firebase quirks.
+  const seat: Seat = preview.players.a ? 'b' : 'a';
+  const seatRef = ref(db, `battles/${code}/players/${seat}`);
+  const claim = await runTransaction(seatRef, (current) => {
+    if (current) return; // taken
+    return newPlayer;
+  });
+
+  if (!claim.committed || !claim.snapshot.exists()) {
+    throw new Error('Could not claim a seat — the other player may have just joined. Try again.');
+  }
+
+  await onDisconnect(ref(db, `battles/${code}/players/${seat}/connected`)).set(false);
   return { code, seat };
 }
 
@@ -216,7 +370,7 @@ export function subscribeBattleRoom(
       onRoom(null);
       return;
     }
-    onRoom(snap.val() as BattleRoom);
+    onRoom(normalizeRoom(snap.val() as BattleRoom));
   });
 }
 
@@ -231,7 +385,7 @@ export async function setPlayerReady(code: string, ready: boolean): Promise<void
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'lobby') return room;
     const seat = mySeat(room, playerId);
     if (!seat || !room.players[seat]) return;
@@ -248,7 +402,7 @@ export async function setRoomDifficulty(
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'lobby') return room;
     if (room.hostSeat !== mySeat(room, playerId)) return;
     room.difficulty = difficulty;
@@ -261,7 +415,7 @@ export async function startBattle(code: string): Promise<void> {
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'lobby') return room;
     if (room.hostSeat !== mySeat(room, playerId)) return;
     if (!room.players.a || !room.players.b) return;
@@ -274,10 +428,13 @@ export async function startBattle(code: string): Promise<void> {
     room.seed = seed;
     room.questionIds = questions.map((q) => q.id);
     room.correctIndexes = questions.map((q) => q.correctIndex);
+    room.optionsByRound = questions.map((q) => q.options);
     room.phase = 'countdown';
     room.countdownEndsAt = nowMs() + BATTLE_COUNTDOWN_SECONDS * 1000;
     room.roundIndex = 0;
     room.hp = { a: BATTLE_START_HP, b: BATTLE_START_HP };
+    room.answers = { a: emptyAnswer(), b: emptyAnswer() };
+    room.roundResolved = false;
     room.outcome = null;
     room.outcomeReason = null;
     room.leftBy = null;
@@ -289,7 +446,7 @@ export async function beginAnsweringPhase(code: string): Promise<void> {
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'countdown') return room;
     if (!room.countdownEndsAt || room.countdownEndsAt > nowMs() + 50) return room;
     room.phase = 'answering';
@@ -311,17 +468,17 @@ export async function submitBattleAnswer(
 
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'answering' || room.roundResolved) return;
     const seat = mySeat(room, playerId);
     if (!seat) return;
-    if (room.answers[seat].submittedAt != null) return; // one submission
+    if (hasSubmitted(room.answers[seat])) return; // one submission
     if (!room.roundDeadlineAt || submittedAt > room.roundDeadlineAt) return;
 
     room.answers[seat] = {
-      choiceIndex,
+      choiceIndex: Number(choiceIndex) as 0 | 1 | 2 | 3,
       submittedAt,
-      correct: null,
+      correct: false,
     };
     return room;
   });
@@ -335,28 +492,30 @@ export async function maybeResolveRound(code: string): Promise<void> {
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'answering' || room.roundResolved) return room;
 
     const deadline = room.roundDeadlineAt ?? 0;
     const bothIn =
-      room.answers.a.submittedAt != null && room.answers.b.submittedAt != null;
+      hasSubmitted(room.answers.a) && hasSubmitted(room.answers.b);
     const timedOut = nowMs() >= deadline;
     if (!bothIn && !timedOut) return room;
 
-    const qIndex = room.roundIndex;
-    const correctIndex = room.correctIndexes[qIndex];
-    if (correctIndex === undefined) return;
+    const qIndex = Number(room.roundIndex);
+    const correctIndex = Number(room.correctIndexes[qIndex]);
+    if (!Number.isFinite(correctIndex) || correctIndex < 0 || correctIndex > 3) {
+      return;
+    }
 
     const aCorrect = gradeChoice(
       correctIndex,
-      room.answers.a.choiceIndex,
+      room.answers.a.choiceIndex == null ? null : Number(room.answers.a.choiceIndex),
       room.answers.a.submittedAt,
       deadline,
     );
     const bCorrect = gradeChoice(
       correctIndex,
-      room.answers.b.choiceIndex,
+      room.answers.b.choiceIndex == null ? null : Number(room.answers.b.choiceIndex),
       room.answers.b.submittedAt,
       deadline,
     );
@@ -364,13 +523,14 @@ export async function maybeResolveRound(code: string): Promise<void> {
     room.answers.a = { ...room.answers.a, correct: aCorrect };
     room.answers.b = { ...room.answers.b, correct: bCorrect };
 
+    const realQuestionCount = room.questionIds.filter((id) => id !== '_pending').length;
     const resolution = resolveRound({
       hpA: room.hp.a,
       hpB: room.hp.b,
       aCorrect,
       bCorrect,
       roundIndex: room.roundIndex,
-      maxRounds: Math.min(BATTLE_MAX_ROUNDS, room.questionIds.length),
+      maxRounds: Math.min(BATTLE_MAX_ROUNDS, realQuestionCount),
     });
 
     room.hp = { a: resolution.hpA, b: resolution.hpB };
@@ -390,7 +550,7 @@ export async function advanceAfterReveal(code: string): Promise<void> {
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     if (room.phase !== 'reveal') return room;
     if (!room.revealUntil || room.revealUntil > nowMs() + 50) return room;
 
@@ -414,7 +574,7 @@ export async function leaveBattleRoom(code: string): Promise<void> {
   const r = roomRef(code);
   await runTransaction(r, (current) => {
     if (!current) return;
-    const room = current as BattleRoom;
+    const room = normalizeRoom(current as BattleRoom);
     const seat = mySeat(room, playerId);
     if (!seat) return;
     room.leftBy = seat;
@@ -444,17 +604,40 @@ export async function heartbeat(code: string): Promise<void> {
 }
 
 export function currentQuestionPublic(room: BattleRoom) {
-  const id = room.questionIds[room.roundIndex];
-  if (!id) return null;
-  const q = getQuestionById(id);
-  if (!q) return null;
+  const idx = Number(room.roundIndex ?? 0);
+  const ids = room.questionIds ?? [];
+  const id = ids[idx];
+  if (!id || id === '_pending') return null;
+
+  const meta = getQuestionById(id) ?? questionForRoomRound(id, Number(room.seed ?? 0), idx);
+  if (!meta) return null;
+
+  // Authoritative options from the room (same on every device). Never re-shuffle locally.
+  const storedOptions = room.optionsByRound?.[idx];
+  const options =
+    storedOptions &&
+    storedOptions.length === 4 &&
+    storedOptions.every((o) => o && o.length > 0)
+      ? storedOptions
+      : meta.options;
+
+  const storedCorrect = room.correctIndexes?.[idx];
+  let correctIndex: 0 | 1 | 2 | 3 = meta.correctIndex;
+  if (
+    storedCorrect !== undefined &&
+    Number(storedCorrect) >= 0 &&
+    Number(storedCorrect) <= 3
+  ) {
+    correctIndex = Number(storedCorrect) as 0 | 1 | 2 | 3;
+  }
+
   return {
-    id: q.id,
-    prompt: q.prompt,
-    promptEn: q.promptEn,
-    options: q.options,
-    explanation: q.explanation,
-    skill: q.skill,
-    correctIndex: q.correctIndex,
+    id: meta.id,
+    prompt: meta.prompt,
+    promptEn: meta.promptEn,
+    options: options as [string, string, string, string],
+    explanation: meta.explanation,
+    skill: meta.skill,
+    correctIndex,
   };
 }

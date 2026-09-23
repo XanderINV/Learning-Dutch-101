@@ -51,15 +51,14 @@ GitHub Pages only deploys from `main` today. For this beta:
 ### Option A — Firebase Hosting channel (recommended)
 
 ```bash
-npm i -g firebase-tools
-firebase login
-firebase experiments:enable webframeworks   # only if prompted
-# Create firebase.json hosting pointing at dist, then:
-npm run build
-firebase hosting:channel:deploy pip-battle
+npm run deploy:beta
+# or: npm run build:firebase && npx firebase hosting:channel:deploy beta
 ```
 
 That prints a unique HTTPS URL for phone + computer testing.
+
+**Important:** Use `build:firebase` (base path `/`), not plain `npm run build` (that keeps `/Learning-Dutch-101/` for GitHub Pages and shows a blank page on Firebase).
+
 
 ### Option B — GitHub Actions beta workflow
 
